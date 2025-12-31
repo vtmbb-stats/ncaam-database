@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D1 Transfer Portal Watchlist</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .filters input, .filters select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .stats {
+            margin-bottom: 15px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th {
+            background: #f8f9fa;
+            padding: 10px 8px;
+            text-align: left;
+            border-bottom: 2px solid #dee2e6;
+            cursor: pointer;
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        th:hover {
+            background: #e9ecef;
+        }
+
+        td {
+            padding: 8px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        tr.marked {
+            background: #fff3cd;
+        }
+
+        tr.marked:hover {
+            background: #ffe69c;
+        }
+
+        button {
+            padding: 5px 10px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 18px;
+            color: #666;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-content h2 {
+            margin-bottom: 20px;
+        }
+
+        .existing-notes {
+            margin-bottom: 20px;
+        }
+
+        .note {
+            background: #f8f9fa;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .add-note {
+            margin-top: 20px;
+        }
+
+        .add-note select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .add-note textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            min-height: 80px;
+            margin-bottom: 10px;
+            font-family: inherit;
+        }
+
+        .add-note button {
+            margin-right: 10px;
+        }
+
+        input[type="checkbox"] {
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>D1 Transfer Portal Watchlist</h1>
+        
+        <div class="filters">
+            <input type="text" id="nameFilter" placeholder="Search name...">
+            <select id="positionFilter">
+                <option value="">All Positions</option>
+            </select>
+            <input type="text" id="schoolFilter" placeholder="Search school...">
+            <select id="conferenceFilter">
+                <option value="">All Conferences</option>
+            </select>
+            <input type="number" id="minPPG" placeholder="Min PPG">
+            <input type="number" id="minRPG" placeholder="Min RPG">
+            <input type="number" id="minAPG" placeholder="Min APG">
+        </div>
+
+        <div class="stats" id="stats">Loading...</div>
+
+        <div class="table-container">
+            <table id="playersTable">
+                <thead>
+                    <tr>
+                        <th>Mark</th>
+                        <th data-sort="Name">Name</th>
+                        <th data-sort="POS">Pos</th>
+                        <th data-sort="Height">Ht</th>
+                        <th data-sort="Weight">Wt</th>
+                        <th data-sort="School">School</th>
+                        <th data-sort="Conference">Conf</th>
+                        <th data-sort="Record">Record</th>
+                        <th data-sort="GP">GP</th>
+                        <th data-sort="MIN">MIN</th>
+                        <th data-sort="PPG">PPG ↓</th>
+                        <th data-sort="RPG">RPG</th>
+                        <th data-sort="APG">APG</th>
+                        <th data-sort="SPG">SPG</th>
+                        <th data-sort="BPG">BPG</th>
+                        <th data-sort="TOPG">TO</th>
+                        <th data-sort="FG%">FG%</th>
+                        <th data-sort="FT%">FT%</th>
+                        <th data-sort="3P%">3P%</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr><td colspan="20" class="loading">Loading players...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="modal" id="notesModal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Player Notes</h2>
+            <div class="existing-notes" id="existingNotes"></div>
+            <div class="add-note">
+                <select id="noteAuthor">
+                    <option>Baker</option>
+                    <option>Coach Smith</option>
+                    <option>Coach Johnson</option>
+                    <option>Scout 1</option>
+                    <option>Scout 2</option>
+                </select>
+                <textarea id="noteText" placeholder="Add a note..."></textarea>
+                <button onclick="addNote()">Add Note</button>
+                <button onclick="closeModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, getDocs, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyBBxeVddki46ufueCLObIVnE9egZKY7IZ8",
+            authDomain: "ncaam-database.firebaseapp.com",
+            projectId: "ncaam-database",
+            storageBucket: "ncaam-database.firebasestorage.app",
+            messagingSenderId: "1034210448770",
+            appId: "1:1034210448770:web:d620e8559a646da80a6b9b"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let allPlayers = [];
+        let filteredPlayers = [];
+        let playerNotes = {};
+        let markedPlayers = {};
+        let currentSort = { key: 'PPG', direction: 'desc' };
+        let selectedPlayer = null;
+
+        // Load players
+        async function loadPlayers() {
+            try {
+                const querySnapshot = await getDocs(collection(db, 'players_stats'));
+                allPlayers = [];
+                querySnapshot.forEach((doc) => {
+                    allPlayers.push({ id: doc.id, ...doc.data() });
+                });
+                
+                filteredPlayers = [...allPlayers];
+                
+                // Load notes and marks
+                await loadNotesAndMarks();
+                
+                // Populate filters
+                populateFilters();
+                
+                // Sort and display
+                sortPlayers('PPG', 'desc');
+                renderTable();
+                
+            } catch (error) {
+                console.error("Error loading players:", error);
+                document.getElementById('tableBody').innerHTML = '<tr><td colspan="20">Error loading data</td></tr>';
+            }
+        }
+
+        async function loadNotesAndMarks() {
+            const notesSnapshot = await getDocs(collection(db, 'player_notes'));
+            notesSnapshot.forEach((doc) => {
+                const data = doc.data();
+                playerNotes[doc.id] = data.notes || [];
+                markedPlayers[doc.id] = data.marked || false;
+            });
+        }
+
+        function populateFilters() {
+            const positions = [...new Set(allPlayers.map(p => p.POS))].sort();
+            const conferences = [...new Set(allPlayers.map(p => p.Conference))].sort();
+            
+            const posSelect = document.getElementById('positionFilter');
+            positions.forEach(pos => {
+                const opt = document.createElement('option');
+                opt.value = pos;
+                opt.textContent = pos;
+                posSelect.appendChild(opt);
+            });
+
+            const confSelect = document.getElementById('conferenceFilter');
+            conferences.forEach(conf => {
+                const opt = document.createElement('option');
+                opt.value = conf;
+                opt.textContent = conf;
+                confSelect.appendChild(opt);
+            });
+        }
+
+        function applyFilters() {
+            const nameFilter = document.getElementById('nameFilter').value.toLowerCase();
+            const posFilter = document.getElementById('positionFilter').value;
+            const schoolFilter = document.getElementById('schoolFilter').value.toLowerCase();
+            const confFilter = document.getElementById('conferenceFilter').value;
+            const minPPG = parseFloat(document.getElementById('minPPG').value) || 0;
+            const minRPG = parseFloat(document.getElementById('minRPG').value) || 0;
+            const minAPG = parseFloat(document.getElementById('minAPG').value) || 0;
+
+            filteredPlayers = allPlayers.filter(p => {
+                if (nameFilter && !p.Name?.toLowerCase().includes(nameFilter)) return false;
+                if (posFilter && p.POS !== posFilter) return false;
+                if (schoolFilter && !p.School?.toLowerCase().includes(schoolFilter)) return false;
+                if (confFilter && p.Conference !== confFilter) return false;
+                if (parseFloat(p.PPG) < minPPG) return false;
+                if (parseFloat(p.RPG) < minRPG) return false;
+                if (parseFloat(p.APG) < minAPG) return false;
+                return true;
+            });
+
+            sortPlayers(currentSort.key, currentSort.direction);
+            renderTable();
+        }
+
+        function sortPlayers(key, direction) {
+            currentSort = { key, direction };
+            
+            filteredPlayers.sort((a, b) => {
+                let aVal = a[key];
+                let bVal = b[key];
+                
+                // Try to parse as numbers
+                const aNum = parseFloat(aVal);
+                const bNum = parseFloat(bVal);
+                if (!isNaN(aNum) && !isNaN(bNum)) {
+                    aVal = aNum;
+                    bVal = bNum;
+                }
+                
+                if (aVal < bVal) return direction === 'asc' ? -1 : 1;
+                if (aVal > bVal) return direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            filteredPlayers.forEach(player => {
+                const row = document.createElement('tr');
+                if (markedPlayers[player.playerId]) {
+                    row.classList.add('marked');
+                }
+
+                row.innerHTML = `
+                    <td><input type="checkbox" ${markedPlayers[player.playerId] ? 'checked' : ''} onchange="toggleMark('${player.playerId}')"></td>
+                    <td>${player.Name || ''}</td>
+                    <td>${player.POS || ''}</td>
+                    <td>${player.Height || ''}</td>
+                    <td>${player.Weight || ''}</td>
+                    <td>${player.School || ''}</td>
+                    <td>${player.Conference || ''}</td>
+                    <td>${player.Record || ''}</td>
+                    <td>${player.GP || ''}</td>
+                    <td>${player.MIN || ''}</td>
+                    <td>${player.PPG || ''}</td>
+                    <td>${player.RPG || ''}</td>
+                    <td>${player.APG || ''}</td>
+                    <td>${player.SPG || ''}</td>
+                    <td>${player.BPG || ''}</td>
+                    <td>${player.TOPG || ''}</td>
+                    <td>${player['FG%'] || ''}</td>
+                    <td>${player['FT%'] || ''}</td>
+                    <td>${player['3P%'] || ''}</td>
+                    <td><button onclick="openNotes('${player.playerId}')">${(playerNotes[player.playerId] || []).length} notes</button></td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            document.getElementById('stats').textContent = `Showing ${filteredPlayers.length} of ${allPlayers.length} players`;
+        }
+
+        window.toggleMark = async function(playerId) {
+            const player = allPlayers.find(p => p.playerId === playerId);
+            if (!player) return;
+
+            const noteDocRef = doc(db, 'player_notes', playerId);
+            const noteDoc = await getDoc(noteDocRef);
+            
+            const currentlyMarked = markedPlayers[playerId] || false;
+            const newMarkedState = !currentlyMarked;
+
+            await setDoc(noteDocRef, {
+                playerId: playerId,
+                notes: noteDoc.exists() ? noteDoc.data().notes || [] : [],
+                marked: newMarkedState
+            }, { merge: true });
+
+            markedPlayers[playerId] = newMarkedState;
+            renderTable();
+        };
+
+        window.openNotes = function(playerId) {
+            selectedPlayer = allPlayers.find(p => p.playerId === playerId);
+            if (!selectedPlayer) return;
+
+            document.getElementById('modalTitle').textContent = `${selectedPlayer.Name} - Notes`;
+            
+            const notesDiv = document.getElementById('existingNotes');
+            notesDiv.innerHTML = '';
+            
+            (playerNotes[playerId] || []).forEach(note => {
+                const noteDiv = document.createElement('div');
+                noteDiv.className = 'note';
+                noteDiv.innerHTML = `<strong>${note.author}</strong> (${new Date(note.timestamp).toLocaleDateString()}): ${note.text}`;
+                notesDiv.appendChild(noteDiv);
+            });
+
+            document.getElementById('noteText').value = '';
+            document.getElementById('notesModal').classList.add('active');
+        };
+
+        window.closeModal = function() {
+            document.getElementById('notesModal').classList.remove('active');
+            selectedPlayer = null;
+        };
+
+        window.addNote = async function() {
+            if (!selectedPlayer) return;
+            
+            const noteText = document.getElementById('noteText').value.trim();
+            if (!noteText) return;
+
+            const noteAuthor = document.getElementById('noteAuthor').value;
+            
+            const noteDocRef = doc(db, 'player_notes', selectedPlayer.playerId);
+            const noteDoc = await getDoc(noteDocRef);
+            
+            const newNote = {
+                text: noteText,
+                author: noteAuthor,
+                timestamp: new Date().toISOString()
+            };
+
+            const existingNotes = noteDoc.exists() ? noteDoc.data().notes || [] : [];
+            
+            await setDoc(noteDocRef, {
+                playerId: selectedPlayer.playerId,
+                notes: [...existingNotes, newNote],
+                marked: markedPlayers[selectedPlayer.playerId] || false
+            }, { merge: true });
+
+            playerNotes[selectedPlayer.playerId] = [...existingNotes, newNote];
+            
+            openNotes(selectedPlayer.playerId);
+            renderTable();
+        };
+
+        // Event listeners
+        document.getElementById('nameFilter').addEventListener('input', applyFilters);
+        document.getElementById('positionFilter').addEventListener('change', applyFilters);
+        document.getElementById('schoolFilter').addEventListener('input', applyFilters);
+        document.getElementById('conferenceFilter').addEventListener('change', applyFilters);
+        document.getElementById('minPPG').addEventListener('input', applyFilters);
+        document.getElementById('minRPG').addEventListener('input', applyFilters);
+        document.getElementById('minAPG').addEventListener('input', applyFilters);
+
+        document.querySelectorAll('th[data-sort]').forEach(th => {
+            th.addEventListener('click', () => {
+                const key = th.dataset.sort;
+                const direction = currentSort.key === key && currentSort.direction === 'desc' ? 'asc' : 'desc';
+                
+                document.querySelectorAll('th').forEach(h => {
+                    h.textContent = h.textContent.replace(' ↑', '').replace(' ↓', '');
+                });
+                th.textContent += direction === 'asc' ? ' ↑' : ' ↓';
+                
+                sortPlayers(key, direction);
+                renderTable();
+            });
+        });
+
+        // Close modal on outside click
+        document.getElementById('notesModal').addEventListener('click', (e) => {
+            if (e.target.id === 'notesModal') {
+                closeModal();
+            }
+        });
+
+        // Load on page load
+        loadPlayers();
+    </script>
+</body>
+</html>

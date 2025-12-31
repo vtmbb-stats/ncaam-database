@@ -291,6 +291,7 @@
     <div class="container">
         <h1>D1 Transfer Portal Watchlist</h1>
         
+        <h3>Conference</h3>
         <div class="conference-tabs" id="conferenceTabs">
             <!-- Conference buttons will be added here -->
         </div>
@@ -314,6 +315,7 @@
                         <th>Mark</th>
                         <th data-sort="Name">Name</th>
                         <th data-sort="POS">Pos</th>
+                        <th data-sort="Class">Class</th>
                         <th data-sort="Height">Ht</th>
                         <th data-sort="Weight">Wt</th>
                         <th data-sort="School">School</th>
@@ -377,6 +379,14 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // Make these global so onclick handlers work
+        window.db = db;
+        window.getDocs = getDocs;
+        window.collection = collection;
+        window.doc = doc;
+        window.setDoc = setDoc;
+        window.getDoc = getDoc;
+
         let allPlayers = [];
         let filteredPlayers = [];
         let playerNotes = {};
@@ -390,6 +400,7 @@
 
         const STAT_OPTIONS = [
             { value: 'POS', label: 'Position', type: 'string' },
+            { value: 'Class', label: 'Class', type: 'string' },
             { value: 'Height', label: 'Height', type: 'string' },
             { value: 'GP', label: 'Games Played', type: 'number' },
             { value: 'MIN', label: 'Minutes', type: 'number' },
@@ -404,7 +415,7 @@
             { value: '3P%', label: '3P%', type: 'number' }
         ];
 
-        function addFilterRow() {
+        window.addFilterRow = function() {
             const filterId = filterIdCounter++;
             const filterDiv = document.createElement('div');
             filterDiv.className = 'filter-row';
@@ -434,9 +445,9 @@
                 value: '',
                 type: 'string'
             });
-        }
+        };
 
-        function updateFilterType(filterId) {
+        window.updateFilterType = function(filterId) {
             const statSelect = document.getElementById(`stat-${filterId}`);
             const selectedOption = statSelect.options[statSelect.selectedIndex];
             const type = selectedOption.dataset.type;
@@ -444,12 +455,10 @@
             const comparisonSelect = document.getElementById(`comparison-${filterId}`);
             
             if (type === 'string') {
-                // For strings (Position, Height), only show = comparison
                 valueInput.type = 'text';
                 valueInput.placeholder = 'Value';
                 comparisonSelect.innerHTML = '<option value="=">=</option>';
             } else {
-                // For numbers, show all comparisons
                 valueInput.type = 'number';
                 valueInput.placeholder = 'Value';
                 valueInput.step = '0.1';
@@ -463,13 +472,13 @@
             }
             
             applyFilters();
-        }
+        };
 
-        function removeFilter(filterId) {
+        window.removeFilter = function(filterId) {
             document.getElementById(`filter-${filterId}`).remove();
             dynamicFilters = dynamicFilters.filter(f => f.id !== filterId);
             applyFilters();
-        }
+        };
 
         function getDynamicFilters() {
             const filters = [];
@@ -640,26 +649,38 @@
                     row.classList.add('marked');
                 }
 
+                // Format function
+                const fmt = (val, type) => {
+                    if (type === 'percent') {
+                        return val ? parseFloat(val).toFixed(2) : '-';
+                    } else if (type === 'stat') {
+                        return val ? parseFloat(val).toFixed(1) : '0.0';
+                    } else {
+                        return val || '';
+                    }
+                };
+
                 row.innerHTML = `
                     <td><input type="checkbox" ${markedPlayers[player.playerId] ? 'checked' : ''} onchange="toggleMark('${player.playerId}')"></td>
                     <td>${player.Name || ''}</td>
                     <td>${player.POS || ''}</td>
+                    <td>${player.Class || ''}</td>
                     <td>${player.Height || ''}</td>
                     <td>${player.Weight || ''}</td>
                     <td>${player.School || ''}</td>
                     <td>${player.Conference || ''}</td>
                     <td>${player.Record || ''}</td>
                     <td>${player.GP || ''}</td>
-                    <td>${player.MIN || ''}</td>
-                    <td>${player.PPG || ''}</td>
-                    <td>${player.RPG || ''}</td>
-                    <td>${player.APG || ''}</td>
-                    <td>${player.SPG || ''}</td>
-                    <td>${player.BPG || ''}</td>
-                    <td>${player.TOPG || ''}</td>
-                    <td>${player['FG%'] || ''}</td>
-                    <td>${player['FT%'] || ''}</td>
-                    <td>${player['3P%'] || ''}</td>
+                    <td>${fmt(player.MIN, 'stat')}</td>
+                    <td>${fmt(player.PPG, 'stat')}</td>
+                    <td>${fmt(player.RPG, 'stat')}</td>
+                    <td>${fmt(player.APG, 'stat')}</td>
+                    <td>${fmt(player.SPG, 'stat')}</td>
+                    <td>${fmt(player.BPG, 'stat')}</td>
+                    <td>${fmt(player.TOPG, 'stat')}</td>
+                    <td>${fmt(player['FG%'], 'percent')}</td>
+                    <td>${fmt(player['FT%'], 'percent')}</td>
+                    <td>${fmt(player['3P%'], 'percent')}</td>
                     <td><button onclick="openNotes('${player.playerId}')">${(playerNotes[player.playerId] || []).length} notes</button></td>
                 `;
                 tbody.appendChild(row);

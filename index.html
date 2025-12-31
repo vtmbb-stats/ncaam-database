@@ -31,6 +31,44 @@
             margin-bottom: 20px;
         }
 
+        .conference-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .conference-tabs button {
+            padding: 8px 16px;
+            background: white;
+            color: #333;
+            border: 2px solid #dee2e6;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .conference-tabs button:hover {
+            background: #e9ecef;
+            border-color: #adb5bd;
+        }
+
+        .conference-tabs button.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        .conference-tabs button.active:hover {
+            background: #0056b3;
+            border-color: #0056b3;
+        }
+
         .filters {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -195,15 +233,16 @@
     <div class="container">
         <h1>D1 Transfer Portal Watchlist</h1>
         
+        <div class="conference-tabs" id="conferenceTabs">
+            <!-- Conference buttons will be added here -->
+        </div>
+
         <div class="filters">
             <input type="text" id="nameFilter" placeholder="Search name...">
             <select id="positionFilter">
                 <option value="">All Positions</option>
             </select>
             <input type="text" id="schoolFilter" placeholder="Search school...">
-            <select id="conferenceFilter">
-                <option value="">All Conferences</option>
-            </select>
             <input type="number" id="minPPG" placeholder="Min PPG">
             <input type="number" id="minRPG" placeholder="Min RPG">
             <input type="number" id="minAPG" placeholder="Min APG">
@@ -287,17 +326,27 @@
         let markedPlayers = {};
         let currentSort = { key: 'PPG', direction: 'desc' };
         let selectedPlayer = null;
+        let currentConference = 'ACC';
+        let conferences = [];
 
-        // Load players
+        // Load all players to get conference list, then filter
         async function loadPlayers() {
             try {
                 const querySnapshot = await getDocs(collection(db, 'players_stats'));
                 allPlayers = [];
+                const confSet = new Set();
+                
                 querySnapshot.forEach((doc) => {
-                    allPlayers.push({ id: doc.id, ...doc.data() });
+                    const player = { id: doc.id, ...doc.data() };
+                    allPlayers.push(player);
+                    if (player.Conference) confSet.add(player.Conference);
                 });
                 
-                filteredPlayers = [...allPlayers];
+                // Sort conferences alphabetically
+                conferences = Array.from(confSet).sort();
+                
+                // Create conference tabs
+                createConferenceTabs();
                 
                 // Load notes and marks
                 await loadNotesAndMarks();
@@ -305,14 +354,43 @@
                 // Populate filters
                 populateFilters();
                 
-                // Sort and display
-                sortPlayers('PPG', 'desc');
-                renderTable();
+                // Load ACC by default
+                loadConference('ACC');
                 
             } catch (error) {
                 console.error("Error loading players:", error);
                 document.getElementById('tableBody').innerHTML = '<tr><td colspan="20">Error loading data</td></tr>';
             }
+        }
+
+        function createConferenceTabs() {
+            const tabsDiv = document.getElementById('conferenceTabs');
+            tabsDiv.innerHTML = '';
+            
+            conferences.forEach(conf => {
+                const btn = document.createElement('button');
+                btn.textContent = conf;
+                btn.onclick = () => loadConference(conf);
+                if (conf === currentConference) {
+                    btn.classList.add('active');
+                }
+                tabsDiv.appendChild(btn);
+            });
+        }
+
+        function loadConference(conf) {
+            currentConference = conf;
+            
+            // Update active tab
+            document.querySelectorAll('.conference-tabs button').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent === conf);
+            });
+            
+            // Filter to selected conference
+            filteredPlayers = allPlayers.filter(p => p.Conference === conf);
+            
+            // Apply other filters
+            applyFilters();
         }
 
         async function loadNotesAndMarks() {
@@ -326,7 +404,6 @@
 
         function populateFilters() {
             const positions = [...new Set(allPlayers.map(p => p.POS))].sort();
-            const conferences = [...new Set(allPlayers.map(p => p.Conference))].sort();
             
             const posSelect = document.getElementById('positionFilter');
             positions.forEach(pos => {
@@ -335,30 +412,24 @@
                 opt.textContent = pos;
                 posSelect.appendChild(opt);
             });
-
-            const confSelect = document.getElementById('conferenceFilter');
-            conferences.forEach(conf => {
-                const opt = document.createElement('option');
-                opt.value = conf;
-                opt.textContent = conf;
-                confSelect.appendChild(opt);
-            });
         }
 
         function applyFilters() {
             const nameFilter = document.getElementById('nameFilter').value.toLowerCase();
             const posFilter = document.getElementById('positionFilter').value;
             const schoolFilter = document.getElementById('schoolFilter').value.toLowerCase();
-            const confFilter = document.getElementById('conferenceFilter').value;
             const minPPG = parseFloat(document.getElementById('minPPG').value) || 0;
             const minRPG = parseFloat(document.getElementById('minRPG').value) || 0;
             const minAPG = parseFloat(document.getElementById('minAPG').value) || 0;
 
-            filteredPlayers = allPlayers.filter(p => {
+            // Start with current conference
+            filteredPlayers = allPlayers.filter(p => p.Conference === currentConference);
+
+            // Apply other filters
+            filteredPlayers = filteredPlayers.filter(p => {
                 if (nameFilter && !p.Name?.toLowerCase().includes(nameFilter)) return false;
                 if (posFilter && p.POS !== posFilter) return false;
                 if (schoolFilter && !p.School?.toLowerCase().includes(schoolFilter)) return false;
-                if (confFilter && p.Conference !== confFilter) return false;
                 if (parseFloat(p.PPG) < minPPG) return false;
                 if (parseFloat(p.RPG) < minRPG) return false;
                 if (parseFloat(p.APG) < minAPG) return false;
@@ -425,7 +496,7 @@
                 tbody.appendChild(row);
             });
 
-            document.getElementById('stats').textContent = `Showing ${filteredPlayers.length} of ${allPlayers.length} players`;
+            document.getElementById('stats').textContent = `${currentConference}: Showing ${filteredPlayers.length} players`;
         }
 
         window.toggleMark = async function(playerId) {
@@ -508,7 +579,6 @@
         document.getElementById('nameFilter').addEventListener('input', applyFilters);
         document.getElementById('positionFilter').addEventListener('change', applyFilters);
         document.getElementById('schoolFilter').addEventListener('input', applyFilters);
-        document.getElementById('conferenceFilter').addEventListener('change', applyFilters);
         document.getElementById('minPPG').addEventListener('input', applyFilters);
         document.getElementById('minRPG').addEventListener('input', applyFilters);
         document.getElementById('minAPG').addEventListener('input', applyFilters);

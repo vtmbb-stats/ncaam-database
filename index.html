@@ -408,6 +408,8 @@
             { value: 'POS', label: 'Position', type: 'string' },
             { value: 'Class', label: 'Class', type: 'string' },
             { value: 'Height', label: 'Height', type: 'string' },
+            { value: 'Weight', label: 'Weight', type: 'string' },
+            { value: 'Record', label: 'Win %', type: 'number' },
             { value: 'GP', label: 'Games Played', type: 'number' },
             { value: 'MIN', label: 'Minutes', type: 'number' },
             { value: 'PPG', label: 'Points', type: 'number' },
@@ -433,13 +435,9 @@
                     ${STAT_OPTIONS.map(opt => `<option value="${opt.value}" data-type="${opt.type}">${opt.label}</option>`).join('')}
                 </select>
                 <select id="comparison-${filterId}">
-                    <option value=">=">≥</option>
-                    <option value="<=">≤</option>
                     <option value="=">=</option>
-                    <option value=">">></option>
-                    <option value="<"><</option>
                 </select>
-                <input type="number" id="value-${filterId}" placeholder="Value" step="0.1">
+                <input type="text" id="value-${filterId}" placeholder="Value">
                 <button onclick="removeFilter(${filterId})">Remove</button>
             `;
             
@@ -601,7 +599,17 @@
             // Apply dynamic filters
             activeFilters.forEach(filter => {
                 filteredPlayers = filteredPlayers.filter(p => {
-                    const playerValue = p[filter.stat];
+                    let playerValue = p[filter.stat];
+                    
+                    // Special handling for Record - convert to win percentage
+                    if (filter.stat === 'Record' && playerValue) {
+                        const parts = playerValue.split('-');
+                        if (parts.length === 2) {
+                            const wins = parseInt(parts[0]);
+                            const losses = parseInt(parts[1]);
+                            playerValue = wins / (wins + losses);
+                        }
+                    }
                     
                     if (filter.type === 'string') {
                         // String comparison (case-insensitive equals)
@@ -750,12 +758,22 @@
         };
 
         window.addNote = async function() {
-            if (!selectedPlayer) return;
+            if (!selectedPlayer) {
+                console.error("No player selected");
+                return;
+            }
             
             const noteText = document.getElementById('noteText').value.trim();
-            if (!noteText) return;
+            if (!noteText) {
+                console.error("No note text entered");
+                return;
+            }
 
             const noteAuthor = document.getElementById('noteAuthor').value;
+            
+            console.log("Adding note for player:", selectedPlayer.playerId);
+            console.log("Note text:", noteText);
+            console.log("Author:", noteAuthor);
             
             try {
                 const noteDocRef = window.doc(window.db, 'player_notes', selectedPlayer.playerId);
@@ -769,19 +787,25 @@
 
                 const existingNotes = noteDoc.exists() ? noteDoc.data().notes || [] : [];
                 
+                console.log("Attempting to save note...");
+                
                 await window.setDoc(noteDocRef, {
                     playerId: selectedPlayer.playerId,
                     notes: [...existingNotes, newNote],
                     marked: markedPlayers[selectedPlayer.playerId] || false
                 }, { merge: true });
 
+                console.log("Note saved successfully!");
+
                 playerNotes[selectedPlayer.playerId] = [...existingNotes, newNote];
                 
                 window.openNotes(selectedPlayer.playerId);
                 renderTable();
             } catch (error) {
-                console.error("Error adding note:", error);
-                alert("Failed to add note. Please try again.");
+                console.error("Detailed error adding note:", error);
+                console.error("Error code:", error.code);
+                console.error("Error message:", error.message);
+                alert("Failed to add note: " + error.message);
             }
         };
 

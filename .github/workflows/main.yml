@@ -32,7 +32,7 @@ jobs:
       
       - name: Fetch player stats
         run: |
-          Rscript fetch_d1_stats_with_class.R
+          Rscript Moats.R
           echo "Stats file created:"
           ls -lh player_stats.json
       

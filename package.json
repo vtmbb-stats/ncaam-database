@@ -1,0 +1,12 @@
+{
+  "name": "transfer-portal-watchlist",
+  "version": "1.0.0",
+  "description": "D1 Basketball Transfer Portal Watchlist",
+  "main": "upload_to_firebase.js",
+  "scripts": {
+    "upload": "node upload_to_firebase.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0"
+  }
+}

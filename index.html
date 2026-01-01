@@ -348,11 +348,17 @@
             <div class="existing-notes" id="existingNotes"></div>
             <div class="add-note">
                 <select id="noteAuthor">
-                    <option>Baker</option>
-                    <option>Coach Smith</option>
-                    <option>Coach Johnson</option>
-                    <option>Scout 1</option>
-                    <option>Scout 2</option>
+                    <option>David Moats</option>
+                    <option>Aidan Berry</option>
+                    <option>Dean Breeden</option>
+                    <option>Richie Brooker</option>
+                    <option>Nick Capeci</option>
+                    <option>Baker Dean</option>
+                    <option>Nate Hensley</option>
+                    <option>David Kebede</option>
+                    <option>Bryan Peyton</option>
+                    <option>Aaron Purser</option>
+                    <option>Isaac Yeaker</option>
                 </select>
                 <textarea id="noteText" placeholder="Add a note..."></textarea>
                 <button onclick="addNote()">Add Note</button>
@@ -415,6 +421,7 @@
             { value: '3P%', label: '3P%', type: 'number' }
         ];
 
+        // Make add filter functions global
         window.addFilterRow = function() {
             const filterId = filterIdCounter++;
             const filterDiv = document.createElement('div');
@@ -505,7 +512,7 @@
         // Load all players to get conference list, then filter
         async function loadPlayers() {
             try {
-                const querySnapshot = await getDocs(collection(db, 'players_stats'));
+                const querySnapshot = await window.getDocs(window.collection(window.db, 'players_stats'));
                 allPlayers = [];
                 const confSet = new Set();
                 
@@ -564,12 +571,16 @@
         }
 
         async function loadNotesAndMarks() {
-            const notesSnapshot = await getDocs(collection(db, 'player_notes'));
-            notesSnapshot.forEach((doc) => {
-                const data = doc.data();
-                playerNotes[doc.id] = data.notes || [];
-                markedPlayers[doc.id] = data.marked || false;
-            });
+            try {
+                const notesSnapshot = await window.getDocs(window.collection(window.db, 'player_notes'));
+                notesSnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    playerNotes[doc.id] = data.notes || [];
+                    markedPlayers[doc.id] = data.marked || false;
+                });
+            } catch (error) {
+                console.error("Error loading notes:", error);
+            }
         }
 
         function applyFilters() {
@@ -693,20 +704,24 @@
             const player = allPlayers.find(p => p.playerId === playerId);
             if (!player) return;
 
-            const noteDocRef = doc(db, 'player_notes', playerId);
-            const noteDoc = await getDoc(noteDocRef);
-            
-            const currentlyMarked = markedPlayers[playerId] || false;
-            const newMarkedState = !currentlyMarked;
+            try {
+                const noteDocRef = window.doc(window.db, 'player_notes', playerId);
+                const noteDoc = await window.getDoc(noteDocRef);
+                
+                const currentlyMarked = markedPlayers[playerId] || false;
+                const newMarkedState = !currentlyMarked;
 
-            await setDoc(noteDocRef, {
-                playerId: playerId,
-                notes: noteDoc.exists() ? noteDoc.data().notes || [] : [],
-                marked: newMarkedState
-            }, { merge: true });
+                await window.setDoc(noteDocRef, {
+                    playerId: playerId,
+                    notes: noteDoc.exists() ? noteDoc.data().notes || [] : [],
+                    marked: newMarkedState
+                }, { merge: true });
 
-            markedPlayers[playerId] = newMarkedState;
-            renderTable();
+                markedPlayers[playerId] = newMarkedState;
+                renderTable();
+            } catch (error) {
+                console.error("Error toggling mark:", error);
+            }
         };
 
         window.openNotes = function(playerId) {
@@ -742,27 +757,32 @@
 
             const noteAuthor = document.getElementById('noteAuthor').value;
             
-            const noteDocRef = doc(db, 'player_notes', selectedPlayer.playerId);
-            const noteDoc = await getDoc(noteDocRef);
-            
-            const newNote = {
-                text: noteText,
-                author: noteAuthor,
-                timestamp: new Date().toISOString()
-            };
+            try {
+                const noteDocRef = window.doc(window.db, 'player_notes', selectedPlayer.playerId);
+                const noteDoc = await window.getDoc(noteDocRef);
+                
+                const newNote = {
+                    text: noteText,
+                    author: noteAuthor,
+                    timestamp: new Date().toISOString()
+                };
 
-            const existingNotes = noteDoc.exists() ? noteDoc.data().notes || [] : [];
-            
-            await setDoc(noteDocRef, {
-                playerId: selectedPlayer.playerId,
-                notes: [...existingNotes, newNote],
-                marked: markedPlayers[selectedPlayer.playerId] || false
-            }, { merge: true });
+                const existingNotes = noteDoc.exists() ? noteDoc.data().notes || [] : [];
+                
+                await window.setDoc(noteDocRef, {
+                    playerId: selectedPlayer.playerId,
+                    notes: [...existingNotes, newNote],
+                    marked: markedPlayers[selectedPlayer.playerId] || false
+                }, { merge: true });
 
-            playerNotes[selectedPlayer.playerId] = [...existingNotes, newNote];
-            
-            openNotes(selectedPlayer.playerId);
-            renderTable();
+                playerNotes[selectedPlayer.playerId] = [...existingNotes, newNote];
+                
+                window.openNotes(selectedPlayer.playerId);
+                renderTable();
+            } catch (error) {
+                console.error("Error adding note:", error);
+                alert("Failed to add note. Please try again.");
+            }
         };
 
         // Event listeners

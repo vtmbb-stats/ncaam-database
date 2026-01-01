@@ -431,7 +431,7 @@
             filterDiv.id = `filter-${filterId}`;
             
             filterDiv.innerHTML = `
-                <select id="stat-${filterId}" onchange="updateFilterType(${filterId})">
+                <select id="stat-${filterId}">
                     ${STAT_OPTIONS.map(opt => `<option value="${opt.value}" data-type="${opt.type}">${opt.label}</option>`).join('')}
                 </select>
                 <select id="comparison-${filterId}">
@@ -443,10 +443,28 @@
             
             document.getElementById('activeFilters').appendChild(filterDiv);
             
+            // Add event listeners after elements are in DOM
+            setTimeout(() => {
+                const valueInput = document.getElementById(`value-${filterId}`);
+                const comparisonSelect = document.getElementById(`comparison-${filterId}`);
+                const statSelect = document.getElementById(`stat-${filterId}`);
+                
+                if (valueInput) {
+                    valueInput.addEventListener('change', applyFilters);
+                    valueInput.addEventListener('input', applyFilters);
+                }
+                if (comparisonSelect) {
+                    comparisonSelect.addEventListener('change', applyFilters);
+                }
+                if (statSelect) {
+                    statSelect.addEventListener('change', () => window.updateFilterType(filterId));
+                }
+            }, 0);
+            
             dynamicFilters.push({
                 id: filterId,
                 stat: 'POS',
-                comparison: '>=',
+                comparison: '=',
                 value: '',
                 type: 'string'
             });
@@ -466,7 +484,7 @@
             } else {
                 valueInput.type = 'number';
                 valueInput.placeholder = 'Value';
-                valueInput.step = '0.1';
+                valueInput.step = '0.01';
                 comparisonSelect.innerHTML = `
                     <option value=">=">≥</option>
                     <option value="<=">≤</option>
@@ -476,7 +494,10 @@
                 `;
             }
             
-            applyFilters();
+            // Add event listener to value input to trigger filter when changed
+            valueInput.onchange = applyFilters;
+            valueInput.oninput = applyFilters;
+            comparisonSelect.onchange = applyFilters;
         };
 
         window.removeFilter = function(filterId) {
@@ -741,10 +762,21 @@
             const notesDiv = document.getElementById('existingNotes');
             notesDiv.innerHTML = '';
             
-            (playerNotes[playerId] || []).forEach(note => {
+            (playerNotes[playerId] || []).forEach((note, idx) => {
                 const noteDiv = document.createElement('div');
                 noteDiv.className = 'note';
-                noteDiv.innerHTML = `<strong>${note.author}</strong> (${new Date(note.timestamp).toLocaleDateString()}): ${note.text}`;
+                noteDiv.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div style="flex: 1;">
+                            <strong>${note.author}</strong> (${new Date(note.timestamp).toLocaleDateString()}): 
+                            <span id="note-text-${idx}">${note.text}</span>
+                        </div>
+                        <div style="display: flex; gap: 5px;">
+                            <button onclick="editNote(${idx})" style="padding: 2px 6px; font-size: 11px;" title="Edit">✏️</button>
+                            <button onclick="deleteNote(${idx})" style="padding: 2px 6px; font-size: 11px; background: #dc3545;" title="Delete">✕</button>
+                        </div>
+                    </div>
+                `;
                 notesDiv.appendChild(noteDiv);
             });
 
@@ -806,6 +838,65 @@
                 console.error("Error code:", error.code);
                 console.error("Error message:", error.message);
                 alert("Failed to add note: " + error.message);
+            }
+        };
+
+        window.editNote = async function(noteIndex) {
+            if (!selectedPlayer) return;
+            
+            const currentNotes = playerNotes[selectedPlayer.playerId] || [];
+            const noteToEdit = currentNotes[noteIndex];
+            
+            const newText = prompt("Edit note:", noteToEdit.text);
+            if (newText === null || newText.trim() === "") return;
+            
+            try {
+                const noteDocRef = window.doc(window.db, 'player_notes', selectedPlayer.playerId);
+                
+                currentNotes[noteIndex] = {
+                    ...noteToEdit,
+                    text: newText.trim(),
+                    edited: new Date().toISOString()
+                };
+                
+                await window.setDoc(noteDocRef, {
+                    playerId: selectedPlayer.playerId,
+                    notes: currentNotes,
+                    marked: markedPlayers[selectedPlayer.playerId] || false
+                }, { merge: true });
+
+                playerNotes[selectedPlayer.playerId] = currentNotes;
+                window.openNotes(selectedPlayer.playerId);
+                renderTable();
+            } catch (error) {
+                console.error("Error editing note:", error);
+                alert("Failed to edit note: " + error.message);
+            }
+        };
+
+        window.deleteNote = async function(noteIndex) {
+            if (!selectedPlayer) return;
+            
+            if (!confirm("Delete this note?")) return;
+            
+            try {
+                const noteDocRef = window.doc(window.db, 'player_notes', selectedPlayer.playerId);
+                const currentNotes = playerNotes[selectedPlayer.playerId] || [];
+                
+                currentNotes.splice(noteIndex, 1);
+                
+                await window.setDoc(noteDocRef, {
+                    playerId: selectedPlayer.playerId,
+                    notes: currentNotes,
+                    marked: markedPlayers[selectedPlayer.playerId] || false
+                }, { merge: true });
+
+                playerNotes[selectedPlayer.playerId] = currentNotes;
+                window.openNotes(selectedPlayer.playerId);
+                renderTable();
+            } catch (error) {
+                console.error("Error deleting note:", error);
+                alert("Failed to delete note: " + error.message);
             }
         };
 

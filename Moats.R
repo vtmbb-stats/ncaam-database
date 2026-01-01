@@ -4,7 +4,7 @@ library(stringr)
 library(hoopR)
 library(jsonlite)
 
-source("C:/Users/bwdea/Downloads/conference_lookup.R")
+source("conference_lookup.R")
 
 mbb_teams_espn <- espn_mbb_teams(year = 2026)
 mbb_teams <- mbb_teams_espn %>% select(display_name, mascot, team_id)
@@ -137,4 +137,5 @@ all_players$playerId <- paste0(gsub(" ", "_", all_players$Name),"_",gsub(" ", "_
 
 all_players <- all_players %>% filter(!is.na(playerId) & playerId != "_")
 
-write_json(all_players, "C:/Users/bwdea/Downloads/player_stats.json", pretty = TRUE)
+write_json(all_players, "player_stats.json", pretty = TRUE)
+

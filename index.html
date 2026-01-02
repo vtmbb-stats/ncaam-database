@@ -599,11 +599,12 @@
         let vtPositions = {}; // Store VT Pos assignments
         let currentSort = { key: 'PPG', direction: 'desc' };
         let selectedPlayer = null;
-        let currentConference = 'All Players';
+        let currentConference = 'ACC';
         let conferences = [];
         let dynamicFilters = [];
         let filterIdCounter = 0;
         let markFilter = 'all'; // 'all', 'nba', 'senior', 'interested', 'portal', 'contacted', 'not_interested'
+        let currentMarkingPlayer = null;
 
         const STAT_OPTIONS = [
             { value: 'POS', label: 'Position', type: 'string' },
@@ -757,8 +758,8 @@
                 // Auto-mark seniors
                 await autoMarkSeniors();
                 
-                // Load All Players by default
-                loadConference('All Players');
+                // Load ACC by default
+                loadConference('ACC');
                 
             } catch (error) {
                 console.error("Error loading players:", error);
@@ -770,11 +771,11 @@
             const tabsDiv = document.getElementById('conferenceTabs');
             tabsDiv.innerHTML = '';
             
-            // Add "All Players" first
+            // Add "All" first
             const allBtn = document.createElement('button');
-            allBtn.textContent = 'All Players';
-            allBtn.onclick = () => loadConference('All Players');
-            if (currentConference === 'All Players') {
+            allBtn.textContent = 'All';
+            allBtn.onclick = () => loadConference('All');
+            if (currentConference === 'All') {
                 allBtn.classList.add('active');
             }
             tabsDiv.appendChild(allBtn);
@@ -800,7 +801,7 @@
             });
             
             // Filter to selected conference or show all
-            if (conf === 'All Players') {
+            if (conf === 'All') {
                 filteredPlayers = [...allPlayers];
             } else {
                 filteredPlayers = allPlayers.filter(p => p.Conference === conf);
@@ -882,7 +883,7 @@
             const activeFilters = getDynamicFilters();
 
             // Start with current conference or all players
-            if (currentConference === 'All Players') {
+            if (currentConference === 'All') {
                 filteredPlayers = [...allPlayers];
             } else {
                 filteredPlayers = allPlayers.filter(p => p.Conference === currentConference);
@@ -1075,8 +1076,6 @@
 
             document.getElementById('stats').textContent = `${currentConference}: Showing ${filteredPlayers.length} players`;
         }
-
-        let currentMarkingPlayer = null;
 
         window.toggleMark = function(playerId) {
             const player = allPlayers.find(p => p.playerId === playerId);

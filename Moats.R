@@ -19,7 +19,7 @@ for (i in 1:length(mbb_teams$mascot)) {
 mbb_teams <- mbb_teams %>% select(display_name, Teamnm, team_id)
 extra_teams <- data.frame(
   display_name = c("Lindenwood Lions", "Queens University Royals", "Southern Indiana Screaming Eagles"),
-  Teamnm = c("Lindenwood ", "Queens University ", "Southern Indiana "),
+  Teamnm = c("Lindenwood  ", "Queens University  ", "Southern Indiana  "),
   team_id = c(2815, 2511, 88)
 )
 
@@ -138,4 +138,5 @@ all_players$playerId <- paste0(gsub(" ", "_", all_players$Name),"_",gsub(" ", "_
 all_players <- all_players %>% filter(!is.na(playerId) & playerId != "_")
 
 write_json(all_players, "player_stats.json", pretty = TRUE)
+
 

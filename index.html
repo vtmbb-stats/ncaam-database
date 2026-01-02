@@ -190,22 +190,58 @@
             background: #ffe69c;
         }
 
-        tr.marked-star {
-            background: #fff8dc;
-            border-left: 3px solid #ffc107;
+        tr.marked-nba {
+            background: #e6f3ff;
+            border-left: 3px solid #add8e6;
         }
 
-        tr.marked-star:hover {
-            background: #ffecb3;
+        tr.marked-nba:hover {
+            background: #cce5ff;
         }
 
-        tr.marked-x {
+        tr.marked-senior {
             background: #ffe6e6;
-            border-left: 3px solid #dc3545;
+            border-left: 3px solid #ffb3b3;
         }
 
-        tr.marked-x:hover {
+        tr.marked-senior:hover {
             background: #ffcccc;
+        }
+
+        tr.marked-interested {
+            background: #e6ffe6;
+            border-left: 3px solid #90ee90;
+        }
+
+        tr.marked-interested:hover {
+            background: #ccffcc;
+        }
+
+        tr.marked-portal {
+            background: #ffffcc;
+            border-left: 3px solid #ffffe0;
+        }
+
+        tr.marked-portal:hover {
+            background: #ffffb3;
+        }
+
+        tr.marked-contacted {
+            background: #f0f0ff;
+            border-left: 3px solid #e6e6fa;
+        }
+
+        tr.marked-contacted:hover {
+            background: #e0e0ff;
+        }
+
+        tr.marked-not_interested {
+            background: #e8e8e8;
+            border-left: 3px solid #d3d3d3;
+        }
+
+        tr.marked-not_interested:hover {
+            background: #d0d0d0;
         }
 
         .mark-button {
@@ -257,6 +293,86 @@
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+
+        .mark-picker-modal {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+
+        .mark-picker-modal h3 {
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .mark-picker-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .mark-option {
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .mark-option:hover {
+            border-color: #333;
+            transform: scale(1.05);
+        }
+
+        .mark-option-nba {
+            background: #add8e6;
+            color: #000;
+        }
+
+        .mark-option-interested {
+            background: #90ee90;
+            color: #000;
+        }
+
+        .mark-option-portal {
+            background: #ffffe0;
+            color: #000;
+        }
+
+        .mark-option-contacted {
+            background: #e6e6fa;
+            color: #000;
+        }
+
+        .mark-option-not_interested {
+            background: #d3d3d3;
+            color: #000;
+        }
+
+        .mark-option-senior {
+            background: #ffb3b3;
+            color: #000;
+        }
+
+        .mark-picker-modal button {
+            width: 100%;
+            padding: 10px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .mark-picker-modal button:hover {
+            background: #5a6268;
         }
 
         .modal-content {
@@ -342,8 +458,12 @@
         <div style="margin-bottom: 15px;">
             <strong>Show Only:</strong>
             <button id="showAll" onclick="filterByMark('all')" style="background: #6c757d; margin-left: 10px;">All Players</button>
-            <button id="showStars" onclick="filterByMark('star')" style="background: #ffc107; color: #000;">⭐ Starred</button>
-            <button id="showXs" onclick="filterByMark('x')" style="background: #dc3545;">❌ X'ed</button>
+            <button id="showNBA" onclick="filterByMark('nba')" style="background: #add8e6; color: #000;">Likely NBA</button>
+            <button id="showSeniors" onclick="filterByMark('senior')" style="background: #ffb3b3; color: #000;">Seniors</button>
+            <button id="showInterested" onclick="filterByMark('interested')" style="background: #90ee90; color: #000;">Interested</button>
+            <button id="showPortal" onclick="filterByMark('portal')" style="background: #ffffe0; color: #000;">In Portal</button>
+            <button id="showContacted" onclick="filterByMark('contacted')" style="background: #e6e6fa; color: #000;">Contacted</button>
+            <button id="showNotInterested" onclick="filterByMark('not_interested')" style="background: #d3d3d3; color: #000;">Not Interested</button>
         </div>
 
         <div class="filters">
@@ -382,6 +502,7 @@
                         <th data-sort="FG%">FG%</th>
                         <th data-sort="FT%">FT%</th>
                         <th data-sort="3P%">3P%</th>
+                        <th>VT Pos</th>
                         <th>Notes</th>
                     </tr>
                 </thead>
@@ -417,6 +538,34 @@
         </div>
     </div>
 
+    <div class="modal" id="markPickerModal">
+        <div class="mark-picker-modal">
+            <h3 id="markPickerTitle">Select Mark</h3>
+            <div class="mark-picker-grid">
+                <div class="mark-option mark-option-nba" onclick="selectMark('nba')">
+                    🏀<br>Likely NBA
+                </div>
+                <div class="mark-option mark-option-interested" onclick="selectMark('interested')">
+                    ✓<br>Interested
+                </div>
+                <div class="mark-option mark-option-portal" onclick="selectMark('portal')">
+                    🚪<br>In Portal
+                </div>
+                <div class="mark-option mark-option-contacted" onclick="selectMark('contacted')">
+                    📞<br>Contacted
+                </div>
+                <div class="mark-option mark-option-not_interested" onclick="selectMark('not_interested')">
+                    ✗<br>Not Interested
+                </div>
+                <div class="mark-option mark-option-senior" onclick="selectMark('senior')">
+                    🎓<br>Senior
+                </div>
+            </div>
+            <button onclick="selectMark('none')">Clear Mark</button>
+            <button onclick="closeMarkPicker()">Cancel</button>
+        </div>
+    </div>
+
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
@@ -447,13 +596,14 @@
         let filteredPlayers = [];
         let playerNotes = {};
         let markedPlayers = {};
+        let vtPositions = {}; // Store VT Pos assignments
         let currentSort = { key: 'PPG', direction: 'desc' };
         let selectedPlayer = null;
-        let currentConference = 'ACC';
+        let currentConference = 'All Players';
         let conferences = [];
         let dynamicFilters = [];
         let filterIdCounter = 0;
-        let markFilter = 'all'; // 'all', 'star', or 'x'
+        let markFilter = 'all'; // 'all', 'nba', 'senior', 'interested', 'portal', 'contacted', 'not_interested'
 
         const STAT_OPTIONS = [
             { value: 'POS', label: 'Position', type: 'string' },
@@ -531,7 +681,10 @@
             if (type === 'string') {
                 valueInput.type = 'text';
                 valueInput.placeholder = 'Value';
-                comparisonSelect.innerHTML = '<option value="=">=</option>';
+                comparisonSelect.innerHTML = `
+                    <option value="=">=</option>
+                    <option value="!=">≠</option>
+                `;
             } else {
                 valueInput.type = 'number';
                 valueInput.placeholder = 'Value';
@@ -601,8 +754,11 @@
                 // Load notes and marks
                 await loadNotesAndMarks();
                 
-                // Load ACC by default
-                loadConference('ACC');
+                // Auto-mark seniors
+                await autoMarkSeniors();
+                
+                // Load All Players by default
+                loadConference('All Players');
                 
             } catch (error) {
                 console.error("Error loading players:", error);
@@ -614,6 +770,16 @@
             const tabsDiv = document.getElementById('conferenceTabs');
             tabsDiv.innerHTML = '';
             
+            // Add "All Players" first
+            const allBtn = document.createElement('button');
+            allBtn.textContent = 'All Players';
+            allBtn.onclick = () => loadConference('All Players');
+            if (currentConference === 'All Players') {
+                allBtn.classList.add('active');
+            }
+            tabsDiv.appendChild(allBtn);
+            
+            // Add conferences alphabetically
             conferences.forEach(conf => {
                 const btn = document.createElement('button');
                 btn.textContent = conf;
@@ -633,8 +799,12 @@
                 btn.classList.toggle('active', btn.textContent === conf);
             });
             
-            // Filter to selected conference
-            filteredPlayers = allPlayers.filter(p => p.Conference === conf);
+            // Filter to selected conference or show all
+            if (conf === 'All Players') {
+                filteredPlayers = [...allPlayers];
+            } else {
+                filteredPlayers = allPlayers.filter(p => p.Conference === conf);
+            }
             
             // Apply other filters
             applyFilters();
@@ -646,26 +816,81 @@
                 notesSnapshot.forEach((doc) => {
                     const data = doc.data();
                     playerNotes[doc.id] = data.notes || [];
-                    markedPlayers[doc.id] = data.marked || 'none'; // 'none', 'star', or 'x'
+                    markedPlayers[doc.id] = data.marked || 'none';
+                    vtPositions[doc.id] = data.vtPos || ''; // Load VT Pos
                 });
             } catch (error) {
                 console.error("Error loading notes:", error);
             }
         }
 
+        async function autoMarkSeniors() {
+            try {
+                const batch = [];
+                for (const player of allPlayers) {
+                    if (player.Class === 'SR' && !markedPlayers[player.playerId]) {
+                        markedPlayers[player.playerId] = 'senior';
+                        
+                        const noteDocRef = window.doc(window.db, 'player_notes', player.playerId);
+                        const noteDoc = await window.getDoc(noteDocRef);
+                        
+                        await window.setDoc(noteDocRef, {
+                            playerId: player.playerId,
+                            notes: noteDoc.exists() ? noteDoc.data().notes || [] : [],
+                            marked: 'senior',
+                            vtPos: noteDoc.exists() ? noteDoc.data().vtPos || '' : ''
+                        }, { merge: true });
+                    }
+                }
+                console.log('Seniors auto-marked');
+            } catch (error) {
+                console.error("Error auto-marking seniors:", error);
+            }
+        }
+
+        window.setVTPos = async function(playerId) {
+            const player = allPlayers.find(p => p.playerId === playerId);
+            if (!player) return;
+            
+            const currentPos = vtPositions[playerId] || '';
+            const newPos = prompt('Enter VT Position:', currentPos);
+            
+            if (newPos === null) return; // Cancelled
+            
+            try {
+                const noteDocRef = window.doc(window.db, 'player_notes', playerId);
+                const noteDoc = await window.getDoc(noteDocRef);
+                
+                await window.setDoc(noteDocRef, {
+                    playerId: playerId,
+                    notes: noteDoc.exists() ? noteDoc.data().notes || [] : [],
+                    marked: markedPlayers[playerId] || 'none',
+                    vtPos: newPos.trim()
+                }, { merge: true });
+                
+                vtPositions[playerId] = newPos.trim();
+                renderTable();
+            } catch (error) {
+                console.error("Error setting VT Pos:", error);
+                alert("Failed to save VT Position: " + error.message);
+            }
+        };
+
         function applyFilters() {
             const nameFilter = document.getElementById('nameFilter').value.toLowerCase();
             const schoolFilter = document.getElementById('schoolFilter').value.toLowerCase();
             const activeFilters = getDynamicFilters();
 
-            // Start with current conference
-            filteredPlayers = allPlayers.filter(p => p.Conference === currentConference);
+            // Start with current conference or all players
+            if (currentConference === 'All Players') {
+                filteredPlayers = [...allPlayers];
+            } else {
+                filteredPlayers = allPlayers.filter(p => p.Conference === currentConference);
+            }
 
             // Apply mark filter
-            if (markFilter === 'star') {
-                filteredPlayers = filteredPlayers.filter(p => markedPlayers[p.playerId] === 'star');
-            } else if (markFilter === 'x') {
-                filteredPlayers = filteredPlayers.filter(p => markedPlayers[p.playerId] === 'x');
+            if (markFilter !== 'all') {
+                filteredPlayers = filteredPlayers.filter(p => markedPlayers[p.playerId] === markFilter);
             }
 
             // Apply name and school filters
@@ -734,8 +959,12 @@
                     }
                     
                     if (filter.type === 'string') {
-                        // String comparison (case-insensitive equals)
-                        return playerValue?.toString().toLowerCase() === filter.value.toLowerCase();
+                        // String comparison
+                        if (filter.comparison === '!=') {
+                            return playerValue?.toString().toLowerCase() !== filter.value.toLowerCase();
+                        } else {
+                            return playerValue?.toString().toLowerCase() === filter.value.toLowerCase();
+                        }
                     } else {
                         // Number comparison
                         const numValue = parseFloat(playerValue);
@@ -788,10 +1017,9 @@
                 const row = document.createElement('tr');
                 const markStatus = markedPlayers[player.playerId] || 'none';
                 
-                if (markStatus === 'star') {
-                    row.classList.add('marked-star');
-                } else if (markStatus === 'x') {
-                    row.classList.add('marked-x');
+                // Apply row coloring based on mark
+                if (markStatus !== 'none') {
+                    row.classList.add(`marked-${markStatus}`);
                 }
 
                 // Format function
@@ -806,12 +1034,20 @@
                 };
 
                 // Mark button display
-                let markButton = '⚪'; // none
-                if (markStatus === 'star') markButton = '⭐';
-                if (markStatus === 'x') markButton = '❌';
+                let markSymbol = '⚪'; // none
+                if (markStatus === 'nba') markSymbol = '🏀';
+                else if (markStatus === 'senior') markSymbol = '🎓';
+                else if (markStatus === 'interested') markSymbol = '✓';
+                else if (markStatus === 'portal') markSymbol = '🚪';
+                else if (markStatus === 'contacted') markSymbol = '📞';
+                else if (markStatus === 'not_interested') markSymbol = '✗';
+
+                // VT Pos display
+                const vtPos = vtPositions[player.playerId] || '';
+                const vtPosDisplay = vtPos ? vtPos : '+';
 
                 row.innerHTML = `
-                    <td><button class="mark-button" onclick="toggleMark('${player.playerId}')">${markButton}</button></td>
+                    <td><button class="mark-button" onclick="toggleMark('${player.playerId}')">${markSymbol}</button></td>
                     <td>${player.Name || ''}</td>
                     <td>${player.POS || ''}</td>
                     <td>${player.Class || ''}</td>
@@ -831,6 +1067,7 @@
                     <td>${fmt(player['FG%'], 'percent')}</td>
                     <td>${fmt(player['FT%'], 'percent')}</td>
                     <td>${fmt(player['3P%'], 'percent')}</td>
+                    <td><button onclick="setVTPos('${player.playerId}')" style="font-weight: ${vtPos ? 'bold' : 'normal'};">${vtPosDisplay}</button></td>
                     <td><button onclick="openNotes('${player.playerId}')">${(playerNotes[player.playerId] || []).length} notes</button></td>
                 `;
                 tbody.appendChild(row);
@@ -839,42 +1076,68 @@
             document.getElementById('stats').textContent = `${currentConference}: Showing ${filteredPlayers.length} players`;
         }
 
-        window.toggleMark = async function(playerId) {
+        let currentMarkingPlayer = null;
+
+        window.toggleMark = function(playerId) {
             const player = allPlayers.find(p => p.playerId === playerId);
             if (!player) return;
+            
+            currentMarkingPlayer = playerId;
+            document.getElementById('markPickerTitle').textContent = `Select Mark - ${player.Name}`;
+            document.getElementById('markPickerModal').classList.add('active');
+        };
 
+        window.selectMark = async function(markType) {
+            if (!currentMarkingPlayer) return;
+            
             try {
-                const noteDocRef = window.doc(window.db, 'player_notes', playerId);
+                const noteDocRef = window.doc(window.db, 'player_notes', currentMarkingPlayer);
                 const noteDoc = await window.getDoc(noteDocRef);
-                
-                const currentMark = markedPlayers[playerId] || 'none';
-                let newMark = 'none';
-                
-                // Cycle: none -> star -> x -> none
-                if (currentMark === 'none') newMark = 'star';
-                else if (currentMark === 'star') newMark = 'x';
-                else newMark = 'none';
 
                 await window.setDoc(noteDocRef, {
-                    playerId: playerId,
+                    playerId: currentMarkingPlayer,
                     notes: noteDoc.exists() ? noteDoc.data().notes || [] : [],
-                    marked: newMark
+                    marked: markType,
+                    vtPos: vtPositions[currentMarkingPlayer] || ''
                 }, { merge: true });
 
-                markedPlayers[playerId] = newMark;
+                markedPlayers[currentMarkingPlayer] = markType;
+                closeMarkPicker();
                 renderTable();
             } catch (error) {
-                console.error("Error toggling mark:", error);
+                console.error("Error setting mark:", error);
+                alert("Failed to set mark: " + error.message);
             }
         };
+
+        window.closeMarkPicker = function() {
+            document.getElementById('markPickerModal').classList.remove('active');
+            currentMarkingPlayer = null;
+        };
+        
+        function getMarkLabel(mark) {
+            switch(mark) {
+                case 'nba': return '🏀 Likely NBA';
+                case 'senior': return '🎓 Senior';
+                case 'interested': return '✓ Interested';
+                case 'portal': return '🚪 In Portal';
+                case 'contacted': return '📞 Contacted';
+                case 'not_interested': return '✗ Not Interested';
+                default: return 'None';
+            }
+        }
 
         window.filterByMark = function(type) {
             markFilter = type;
             
             // Update button styles
             document.getElementById('showAll').style.opacity = type === 'all' ? '1' : '0.5';
-            document.getElementById('showStars').style.opacity = type === 'star' ? '1' : '0.5';
-            document.getElementById('showXs').style.opacity = type === 'x' ? '1' : '0.5';
+            document.getElementById('showNBA').style.opacity = type === 'nba' ? '1' : '0.5';
+            document.getElementById('showSeniors').style.opacity = type === 'senior' ? '1' : '0.5';
+            document.getElementById('showInterested').style.opacity = type === 'interested' ? '1' : '0.5';
+            document.getElementById('showPortal').style.opacity = type === 'portal' ? '1' : '0.5';
+            document.getElementById('showContacted').style.opacity = type === 'contacted' ? '1' : '0.5';
+            document.getElementById('showNotInterested').style.opacity = type === 'not_interested' ? '1' : '0.5';
             
             applyFilters();
         };
@@ -950,7 +1213,8 @@
                 await window.setDoc(noteDocRef, {
                     playerId: selectedPlayer.playerId,
                     notes: [...existingNotes, newNote],
-                    marked: markedPlayers[selectedPlayer.playerId] || 'none'
+                    marked: markedPlayers[selectedPlayer.playerId] || 'none',
+                    vtPos: vtPositions[selectedPlayer.playerId] || ''
                 }, { merge: true });
 
                 console.log("Note saved successfully!");
@@ -988,7 +1252,8 @@
                 await window.setDoc(noteDocRef, {
                     playerId: selectedPlayer.playerId,
                     notes: currentNotes,
-                    marked: markedPlayers[selectedPlayer.playerId] || false
+                    marked: markedPlayers[selectedPlayer.playerId] || 'none',
+                    vtPos: vtPositions[selectedPlayer.playerId] || ''
                 }, { merge: true });
 
                 playerNotes[selectedPlayer.playerId] = currentNotes;
@@ -1014,7 +1279,8 @@
                 await window.setDoc(noteDocRef, {
                     playerId: selectedPlayer.playerId,
                     notes: currentNotes,
-                    marked: markedPlayers[selectedPlayer.playerId] || false
+                    marked: markedPlayers[selectedPlayer.playerId] || 'none',
+                    vtPos: vtPositions[selectedPlayer.playerId] || ''
                 }, { merge: true });
 
                 playerNotes[selectedPlayer.playerId] = currentNotes;
@@ -1049,6 +1315,12 @@
         document.getElementById('notesModal').addEventListener('click', (e) => {
             if (e.target.id === 'notesModal') {
                 closeModal();
+            }
+        });
+
+        document.getElementById('markPickerModal').addEventListener('click', (e) => {
+            if (e.target.id === 'markPickerModal') {
+                closeMarkPicker();
             }
         });
 

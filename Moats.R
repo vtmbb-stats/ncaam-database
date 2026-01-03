@@ -154,9 +154,9 @@ manual_players <- data.frame(
   SPG = c(1.1),
   BPG = c(1.0),
   TOPG = c(0.9),
-  `FG%` = c(44.5),
-  `FT%` = c(70.6),
-  `3P%` = c(36.2),
+  `FG%` = c(0.445),
+  `FT%` = c(0.706),
+  `3P%` = c(0.362),
   stringsAsFactors = FALSE
 )
 
@@ -177,3 +177,4 @@ write_json(all_players, "player_stats.json", pretty = TRUE)
 
 cat(sprintf("\nFINAL: Collected %d players from %d teams + %d manual players\n", 
             nrow(all_players), nrow(espn_teams), nrow(manual_players)))
+

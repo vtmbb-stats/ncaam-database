@@ -290,7 +290,10 @@
     font-variant-numeric: tabular-nums;
     font-size: 12.5px;
   }
-  .s-cell.num.dim { color: var(--text-muted); opacity: .5; }
+  /* muted text color only — NOT opacity, which would also fade this
+     cell's border-top and break the strong player-divider line whenever
+     a player's first (top) season happens to have no recorded stats */
+  .s-cell.num.dim { color: var(--text-muted); }
 
   /* the first season row of each player's block carries the strong
      player-to-player divider, matching the id-cell's top border; the

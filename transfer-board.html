@@ -3455,7 +3455,7 @@
         setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 1500);
       } catch (e) {
         console.error('Failed to save note:', e);
-        if (statusEl) { statusEl.textContent = 'save failed — offline?'; statusEl.className = 'notes-status'; }
+        if (statusEl) { statusEl.textContent = 'save failed: ' + (e.code || e.message || 'unknown error'); statusEl.className = 'notes-status'; }
       }
     }, 700));
   }
